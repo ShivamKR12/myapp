@@ -2,6 +2,7 @@ import os
 import random
 import pygame
 import argparse
+import tkinter as tk
 
 class MusicPlayer:
     def __init__(self, music_dir="music_directory"):
@@ -46,42 +47,42 @@ class MusicPlayer:
         else:
             print("Invalid song index.")
 
-def main():
-    parser = argparse.ArgumentParser(description="Simple Music Player")
-    parser.add_argument("-d", "--directory", default="music_directory", help="Directory containing music files")
-    args = parser.parse_args()
+class MusicPlayerGUI:
+    def __init__(self, master, music_dir="music_directory"):
+        self.master = master
+        master.title("Music Player")
 
-    music_dir = args.directory
-    player = MusicPlayer(music_dir) 
+        self.player = MusicPlayer(music_dir)
+
+        self.song_listbox = tk.Listbox(master)
+        self.song_listbox.pack(fill=tk.BOTH, expand=True)
+
+        for song in self.player.library:
+            self.song_listbox.insert(tk.END, f"{song['title']} - {song['artist']}")
+
+        play_button = tk.Button(master, text="Play", command=self.play_selected_song)
+        play_button.pack()
+
+    def play_selected_song(self):
+        try:
+            selection = self.song_listbox.curselection()
+            if selection:
+                song_index = selection[0]
+                self.player.play_song(song_index)
+        except Exception as e:
+            print(f"Error playing song: {e}")
+
+def main():
+    music_dir = "music_directory"  # Default music directory
 
     if not os.path.exists(music_dir):
         print(f"Directory '{music_dir}' not found. "
-              f"Please create it and add your music files, or specify a different directory using the -d option.")
+              f"Please create it and add your music files.")
         return
 
-    # player.add_songs(music_dir)  # No need to call add_songs, it's done in load_library
-
-    while True:
-        print("\nMusic Player Menu:")
-        print("1. List Songs")
-        print("2. Play Song")
-        print("3. Exit")
-        choice = input("Enter your choice: ")
-
-        if choice == '1':
-            player.list_songs()
-        elif choice == '2':
-            player.list_songs()  # List songs for user to choose
-            if player.library:  # Check if there are songs in the library
-                try:
-                    song_index = int(input("Enter song number to play: ")) - 1
-                    player.play_song(song_index)
-                except ValueError:
-                    print("Invalid input. Please enter a number.")
-        elif choice == '3':
-            break
-        else:
-            print("Invalid choice. Please try again.")
+    root = tk.Tk()
+    player_gui = MusicPlayerGUI(root, music_dir)
+    root.mainloop()
 
 
 if __name__ == "__main__":
