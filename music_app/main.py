@@ -1,5 +1,7 @@
 import os
 import random
+import pygame
+import argparse
 
 class MusicPlayer:
     def __init__(self, music_dir="music_directory"):
@@ -31,19 +33,30 @@ class MusicPlayer:
     def play_song(self, index):
         """Plays the song at the given index."""
         if 0 <= index < len(self.library):
-            song = self.library[index]
-            print(f"Now playing: {song['title']} - {song['artist']}")
-            # Placeholder for actual playback functionality
-            # You would use a library like pygame or playsound here
+            try:
+                song = self.library[index]
+                print(f"Now playing: {song['title']} - {song['artist']}")
+                pygame.mixer.init()
+                pygame.mixer.music.load(song['path'])
+                pygame.mixer.music.play()
+                while pygame.mixer.music.get_busy():
+                    pygame.time.Clock().tick(10)  # Keep the program responsive
+            except pygame.error as e:
+                print(f"Error playing song: {e}")
         else:
             print("Invalid song index.")
 
 def main():
-    player = MusicPlayer()
-    music_dir = "music_directory"  # Replace with your actual music directory
+    parser = argparse.ArgumentParser(description="Simple Music Player")
+    parser.add_argument("-d", "--directory", default="music_directory", help="Directory containing music files")
+    args = parser.parse_args()
+
+    music_dir = args.directory
+    player = MusicPlayer(music_dir) 
 
     if not os.path.exists(music_dir):
-        print(f"Directory '{music_dir}' not found. Please add your music files.")
+        print(f"Directory '{music_dir}' not found. "
+              f"Please create it and add your music files, or specify a different directory using the -d option.")
         return
 
     # player.add_songs(music_dir)  # No need to call add_songs, it's done in load_library
