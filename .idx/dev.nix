@@ -7,6 +7,7 @@
   packages = [
     pkgs.jdk17
     pkgs.unzip
+    pkgs.sudo
   ];
   # Sets environment variables in the workspace
   env = {};

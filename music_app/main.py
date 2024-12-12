@@ -3,6 +3,8 @@ import random
 import pygame
 import argparse
 import tkinter as tk
+from flask import Flask, jsonify, request
+import requests
 
 class MusicPlayer:
     def __init__(self, music_dir="music_directory"):
@@ -84,6 +86,34 @@ def main():
     player_gui = MusicPlayerGUI(root, music_dir)
     root.mainloop()
 
+app = Flask(__name__)
+
+API_KEY = 'EABCC'
+API_BASE_URL = "https://www.theaudiodb.com/api/v1/json"
+
+@app.route('/search_track/<artist_name>/<track_name>', methods=['GET'])
+def search_track(artist_name, track_name):
+    try:
+        url = f"{API_BASE_URL}/{API_KEY}/searchtrack.php?s={artist_name}&t={track_name}"
+        response = requests.get(url)
+        response.raise_for_status()  # Raise HTTPError for bad responses (4xx or 5xx)
+        data = response.json()
+
+        if data and data['track']:
+            track = data['track'][0]
+            return jsonify({'track_name': track['strTrack'], 'preview_url': track['strTrackPreviewUrl']})
+        else:
+            return jsonify({'error': 'Track not found'}), 404
+
+    except requests.exceptions.RequestException as e:
+        return jsonify({'error': f'API request failed: {e}'}), 500
+    except Exception as e:
+        return jsonify({'error': f'An error occurred: {e}'}), 500
+
+
+if __name__ == "__main__":
+    # main()  # Comment out to run the Flask app instead of the GUI
+    app.run(debug=True)
 
 if __name__ == "__main__":
     main()
