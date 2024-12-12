@@ -39,6 +39,7 @@ dependencies:
   sqlite3: ^2.0.0+1 # Or any compatible version
   path_provider: ^2.0.5
   http: ^0.13.5 
+  sqflite: ^2.0.0+3
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.

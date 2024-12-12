@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'player_screen.dart';
+import 'playlist_screen.dart';
+import 'home_screen.dart'; // Import the home screen file
 
 void main() {
   runApp(const MyApp());
@@ -11,40 +14,61 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Music Streaming App',
-      theme: ThemeData(primarySwatch: Colors.blue),
-      home: const HomeScreen(),
+      title: 'Flutter Music App',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      // Define routes for navigation
+      routes: {
+        '/': (context) => const MainScreen(), // Default route (home screen)
+        '/player': (context) => const PlayerScreen(),
+        '/playlist': (context) => const PlaylistScreen(),
+      },
+      // Set initial route to the home screen
+      initialRoute: '/',
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  final String title;
+class MainScreen extends StatefulWidget {
+  const MainScreen({Key? key}) : super(key: key);
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<MainScreen> createState() => _MainScreenState();
 }
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+class _MainScreenState extends State<MainScreen> {
+  int _selectedIndex = 0;
+  final List<Widget> _screens = [
+    const HomeScreen(),
+    const PlayerScreen(), 
+    const PlaylistScreen(),
+  ];
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Music Streaming App'),
+      body: _screens[_selectedIndex],
+      bottomNavigationBar: BottomNavigationBar(        
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.music_note), label: 'Player'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.playlist_play), label: 'Playlists'),
+        ],
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
       ),
-      body: ListView.builder(
-        itemCount: 10, // Replace with actual playlist count
-        itemBuilder: (context, index) {
-          return ListTile(
-            title: Text('Recommended Playlist ${index + 1}'),
-            // Add other playlist details here (e.g., image, description)
-          );
-        },
-      ), 
     );
   }
 }
+
+
