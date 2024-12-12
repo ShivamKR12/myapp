@@ -5,7 +5,7 @@ import 'dart:io';
 import 'database_helper.dart'; // Import your DatabaseHelper
 
 class PlayerScreen extends StatefulWidget {
-  const PlayerScreen({Key? key}) : super(key: key);
+  const PlayerScreen({super.key});
 
   @override
   State<PlayerScreen> createState() => _PlayerScreenState();
@@ -16,7 +16,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
   bool _isPlaying = false;
   String _currentSongTitle = 'No song selected';
   String _currentArtist = '';
-  Map<String, double> _downloadProgress = {}; 
+  final Map<String, double> _downloadProgress = {}; 
 
   final List<Map<String, dynamic>> _songs = [
     {'title': 'Song 1', 'artist': 'Artist A', 'source': 'audio_source_1.mp3', 'id': '1'}, // Replace with actual audio source URLs

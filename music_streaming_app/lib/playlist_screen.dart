@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'database_helper.dart';
 
 class PlaylistScreen extends StatefulWidget {
-  const PlaylistScreen({Key? key}) : super(key: key);
+  const PlaylistScreen({super.key});
 
   @override
   State<PlaylistScreen> createState() => _PlaylistScreenState();
