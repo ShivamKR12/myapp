@@ -159,13 +159,12 @@ class _MyAppState extends State<MyApp> {
               child: const Text("Play Yellow by Coldplay"),
               ),
             ElevatedButton(
-              onPressed: () => _fetchAndDisplayAlbumTracks(2115888),
-              child: const Text("Fetch Album Tracks"),
-            ),
-            ),
-          ),
+                onPressed: () => _fetchAndDisplayAlbumTracks(2115888),
+                child: const Text("Fetch Album Tracks"),
+              ),
+          ],
         ),
       ),
-    )
+    );
   }
 }
