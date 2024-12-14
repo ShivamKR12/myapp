@@ -73,12 +73,16 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
       songIdList.remove(songId);
     }
 
-    await DatabaseHelper.instance.updatePlaylistSongs(
-        playlistId, songIdList.map((id) => id.toString()).join(','));
+    await newMethod(playlistId, songIdList);
     _refreshPlaylists();
     } catch (e) {
       _showErrorSnackBar('Error updating playlist: $e');
     }
+  }
+
+  dynamic newMethod(int playlistId, List<dynamic> songIdList) {
+    return DatabaseHelper.instance.updatePlaylistSongs(
+      playlistId, songIdList.map((id) => id.toString()).join(','));
   }
 
   @override
@@ -144,4 +148,8 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
       ),
     );
   }
+}
+
+class _showErrorSnackBar {
+  _showErrorSnackBar(String s);
 }

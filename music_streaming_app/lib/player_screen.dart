@@ -1,8 +1,16 @@
-import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:just_audio/just_audio.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:flutter/material.dart';
 import 'dart:io';
-import 'database_helper.dart'; // Import your DatabaseHelper
+import 'package:file_picker/file_picker.dart';
+import 'database_helper.dart';
+import 'playlist_management_screen.dart';
+import 'playlist_service.dart';
+import 'strings.dart';
+
+const String appTitle = 'My Music App'; // Define this as a constant
+const String pickLocalFilesButtonText = 'Pick Local Files';
+const String createPlaylistButtonText = 'Create Playlist';
 
 class PlayerScreen extends StatefulWidget {
   const PlayerScreen({super.key});
@@ -15,14 +23,35 @@ class _PlayerScreenState extends State<PlayerScreen> {
   final _player = AudioPlayer();
   bool _isPlaying = false;
   String _currentSongTitle = 'No song selected';
-  String _currentArtist = '';
-  final Map<String, double> _downloadProgress = {}; 
+  String _currentSongPath = '';
 
   final List<Map<String, dynamic>> _songs = [
-    {'title': 'Song 1', 'artist': 'Artist A', 'source': 'audio_source_1.mp3', 'id': '1'}, // Replace with actual audio source URLs
-    {'title': 'Song 2', 'artist': 'Artist B', 'source': 'audio_source_2.mp3', 'id': '2'}, // Replace with actual audio source URLs
-    {'title': 'Song 3', 'artist': 'Artist A', 'source': 'audio_source_3.mp3', 'id': '3'}, // Replace with actual audio source URLs
+    {
+      'title': 'Song 1',
+      'artist': 'Artist A',
+      'source': 'https://luan.xyz/files/audio/ambient_c_motion.mp3',
+      'id': '1'
+    },
+    {
+      'title': 'Song 2',
+      'artist': 'Artist B',
+      'source': 'https://luan.xyz/files/audio/coins.mp3',
+      'id': '2'
+    },
+    {
+      'title': 'Song 3',
+      'artist': 'Artist A',
+      'source': 'https://luan.xyz/files/audio/newsroom.mp3',
+      'id': '3'
+    },
   ];
+
+  final List<String> _localSongPaths = [];
+
+  final Map<String, double> _downloadProgress = {};
+  bool _isShuffleOn = false;
+  bool _isRepeatOn = false;
+  final PlaylistService _playlistService = PlaylistService();
 
   @override
   void dispose() {
@@ -30,84 +59,213 @@ class _PlayerScreenState extends State<PlayerScreen> {
     super.dispose();
   }
 
-  void _playSong(String source) async {
+  @override
+  void initState() {
+    super.initState();
+    _player.currentIndexStream.listen((index) {
+      if (index != null && index < _songs.length) {
+        setState(() {
+          _currentSongTitle = _songs[index]['title']!;
+        });
+      }
+    });
+
+    _player.playerStateStream.listen((state) {
+      if (state.processingState == ProcessingState.completed) {
+        _handleSongCompletion();
+      } else if (state.processingState == ProcessingState.idle) {
+        setState(() {
+          _isPlaying = false;
+          _currentSongTitle = 'No song selected';
+        });
+      }
+    });
+  }
+
+  void _handleSongCompletion() {
+    if (_isRepeatOn) {
+      _player.seek(Duration.zero);
+      _player.play();
+    } else if (_isShuffleOn) {
+      _player.seekToNext();
+    } else {
+      final nextIndex = _player.currentIndex! + 1;
+      if (nextIndex < _songs.length) {
+        _player.seek(nextIndex as Duration?);
+      } else {
+        _player.stop();
+      }
+    }
+  }
+
+  Future<void> _playSong(String source) async {
     try {
-      await _player.setAudioSource(AudioSource.uri(Uri.parse(source)));
-      await _player.play();
       setState(() {
-        _isPlaying = true;
+        _currentSongPath = source; // Store the path of the current song
       });
+
+      if (source.startsWith('http')) {
+        await _player.setAudioSource(AudioSource.uri(Uri.parse(source)));
+      } else {
+        _validateAudioFile(source);
+        await _player.setAudioSource(AudioSource.file(source));
+      }
+
+      await _player.play();
+      setState(() => _isPlaying = true);
     } catch (e) {
-      print("Error playing song: $e");
-      // Handle the error appropriately (e.g., show a snackbar to the user)
+      _showErrorSnackbar('Error playing song: ${e.toString()}');
+      // Implement retry logic or fallback behavior here if needed
     }
   }
 
   Future<void> _downloadSong(String songId, String sourceUrl) async {
-    final dir = await getApplicationDocumentsDirectory();
-    final file = File('${dir.path}/$songId.mp3'); 
-    
+    final dir = await DatabaseHelper.instance.getAppDocumentsDirectory();
+    final file = File('${dir.path}/$songId.mp3');
+
     setState(() {
-      _downloadProgress[songId] = 0.0; 
+      _downloadProgress[songId] = 0.0;
     });
 
     try {
-      // Replace with your actual download logic
-      // For example, using http package to download the file
-      // You'll need to fetch the audio data from sourceUrl and save it to file
-      // ...
-
-      // Simulate download progress for demonstration
-      for (var i = 0; i <= 100; i += 10) {
-        await Future.delayed(const Duration(milliseconds: 100));
-        setState(() {
-          _downloadProgress[songId] = i / 100.0;
-        });
+      final response = await http.get(Uri.parse(sourceUrl));
+      if (response.statusCode != 200) {
+        throw HttpException('Failed to download song: ${response.statusCode}');
       }
-
-      // After successful download, update the database
-      await DatabaseHelper.instance.insertDownloadedSong(songId, file.path); 
-    } catch (e) {
-      print("Error downloading song: $e");
-      // Handle download errors
+      setState(() {
+        _downloadProgress[songId] = 1.0;
+      });
+      DatabaseHelper.instance.insertDownloadedSong(songId as Song, file.path);
+    } on SocketException {
+      _showErrorSnackbar('No internet connection');
+    } on HttpException catch (e) {
+      _showErrorSnackbar('Download failed: ${e.message}');
+    } on IOException catch (e) {
+      _showErrorSnackbar('File write error: ${e.toString()}');
     } finally {
       setState(() {
-        _downloadProgress[songId] = 1.0; 
+        _downloadProgress[songId] = 1.0;
       });
     }
+  }
+
+  Future<void> _pickLocalFiles() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.audio,
+      allowMultiple: true,
+    );
+
+    if (result != null) {
+      setState(() {
+        _localSongPaths.addAll(result.paths.cast<String>());
+        // Update _songs list with local files
+        for (String? path in result.paths) {
+          if (path == null) continue;
+          _songs.add({
+            'title': path.split('/').last,
+            'artist': 'Unknown',
+            'source': path,
+            'id': path.hashCode.toString(),
+          });
+        }
+      });
+    } else {
+      // User canceled the picker
+      _showErrorSnackbar(errorNoFileSelected);
+    }
+  }
+
+  Future<void> _createPlaylist(String playlistName) async {
+    await _playlistService.createPlaylist(playlistName);
+    setState(() {}); // Trigger UI update
+  }
+
+  void _showCreatePlaylistDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        String newPlaylistName = '';
+        return AlertDialog(
+          title: const Text(createPlaylistText),
+          content: TextField(
+            onChanged: (value) => newPlaylistName = value,
+            decoration: const InputDecoration(hintText: playlistNameHint),
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text(cancelText)),
+            TextButton(
+              onPressed: () {
+                if (newPlaylistName.isNotEmpty) {
+                  _createPlaylist(newPlaylistName);
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text(createText),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Music Player')),
+      appBar: AppBar(title: const Text(appTitle)),
       body: Column(
         children: [
+          ElevatedButton(
+            onPressed: _pickLocalFiles,
+            child: const Text(pickLocalFilesButtonText),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              _showCreatePlaylistDialog();
+            },
+            child: const Text(createPlaylistButtonText),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const PlaylistManagementScreen()));
+            },
+            child: const Text(viewPlaylistsText),
+          ),
           Expanded(
             child: ListView.builder(
               itemCount: _songs.length,
               itemBuilder: (context, index) {
                 return ListTile(
                   title: Text(_songs[index]['title']!),
-                  trailing: _downloadProgress.containsKey(_songs[index]['id']) &&
-                          _downloadProgress[_songs[index]['id']]! < 1.0
-                      ? LinearProgressIndicator(
-                          value: _downloadProgress[_songs[index]['id']],
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (_downloadProgress.containsKey(_songs[index]['id']) &&
+                          _downloadProgress[_songs[index]['id']]! < 1.0)
+                        SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            value: _downloadProgress[_songs[index]['id']],
+                          ),
                         )
-                      : IconButton(
+                      else
+                        IconButton(
                           icon: const Icon(Icons.download),
-                          onPressed: () {
-                            _downloadSong(
-                              _songs[index]['id']!,
-                              _songs[index]['source']!,
-                            );
-                          },
+                          onPressed: () => _downloadSong(
+                              _songs[index]['id']!, _songs[index]['source']!),
                         ),
+                    ],
+                  ),
                   subtitle: Text(_songs[index]['artist']!),
                   onTap: () {
                     setState(() {
                       _currentSongTitle = _songs[index]['title']!;
-                      _currentArtist = _songs[index]['artist']!;
+
                       _playSong(_songs[index]['source']!); // Placeholder source
                     });
                   },
@@ -124,21 +282,90 @@ class _PlayerScreenState extends State<PlayerScreen> {
                   style: const TextStyle(fontSize: 18),
                 ),
                 Text(
-                  _currentArtist,
+                  'Source: $_currentSongPath', // Display the source
                   style: const TextStyle(fontSize: 16),
                 ),
-                 IconButton(
-                  onPressed: () async {
-                     if (_isPlaying) {
-                        await _player.pause();
-                      } else {
-                        await _player.play();
-                      }
-                    setState(() {
-                      _isPlaying = !_isPlaying;
-                    });
+                StreamBuilder<Duration?>(
+                  stream: _player.durationStream,
+                  builder: (context, snapshot) {
+                    final duration = snapshot.data ?? Duration.zero;
+                    return Slider(
+                      min: 0.0,
+                      max: duration.inMilliseconds.toDouble(),
+                      value: _player.position.inMilliseconds.toDouble(),
+                      onChanged: (value) {
+                        _player.seek(Duration(milliseconds: value.toInt()));
+                      },
+                    );
                   },
-                  icon: Icon(_isPlaying ? Icons.pause : Icons.play_arrow),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Tooltip(
+                      message: 'Shuffle',
+                      child: IconButton(
+                        onPressed: () {
+                          setState(() {
+                            _isShuffleOn = !_isShuffleOn;
+                          });
+                          _player.setShuffleModeEnabled(_isShuffleOn);
+                        },
+                        icon: Icon(
+                          Icons.shuffle,
+                          color: _isShuffleOn ? Colors.blue : Colors.grey,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () async {
+                        if (_isPlaying) {
+                          await _player.pause();
+                        } else {
+                          await _player.play();
+                        }
+                        setState(() {
+                          _isPlaying = !_isPlaying;
+                        });
+                      },
+                      icon: Icon(_isPlaying ? Icons.pause : Icons.play_arrow),
+                    ),
+                    Tooltip(
+                      message: 'Repeat',
+                      child: IconButton(
+                        onPressed: () {
+                          setState(() {
+                            _isRepeatOn = !_isRepeatOn;
+                          });
+                          // You might need to add logic here to handle repeat functionality with just_audio
+                          // For example, _player.loopMode = LoopMode.all; for repeating all songs
+                        },
+                        icon: Icon(
+                          Icons.repeat,
+                          color: _isRepeatOn ? Colors.blue : Colors.grey,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                Row(
+                  children: [
+                    const Icon(Icons.volume_mute),
+                    Expanded(
+                      child: Slider(
+                        value: _player.volume,
+                        min: 0.0,
+                        max: 1.0,
+                        onChanged: (value) {
+                          setState(() {
+                            _player.setVolume(value);
+                          });
+                        },
+                      ),
+                    ),
+                    const Icon(Icons.volume_up),
+                    Text('${(_player.volume * 100).toInt()}%'),
+                  ],
                 ),
               ],
             ),
@@ -147,4 +374,23 @@ class _PlayerScreenState extends State<PlayerScreen> {
       ),
     );
   }
+
+  void _showErrorSnackbar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+  void _validateAudioFile(String filePath) {
+  if (filePath.isEmpty || !filePath.endsWith('.mp3')) {
+      throw Exception("Invalid file format. Please select an MP3 file.");
+  }
+}
+  
+}
+
+extension on String {
+  get path => null;
 }
