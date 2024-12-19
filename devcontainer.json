@@ -1,0 +1,21 @@
+{
+    "name": "Android Development",
+    "build": {
+      "dockerfile": "Dockerfile"
+    },
+    "runArgs": [
+      "--privileged"  // Required for accessing KVM
+    ],
+    "customizations": {
+      "vscode": {
+        "settings": {
+          "terminal.integrated.shell.linux": "/bin/bash"
+        },
+        "extensions": [
+          "ms-vscode.vscode-typescript-tslint-plugin",
+          "dart-code.flutter"
+        ]
+      }
+    },
+    "postCreateCommand": "flutter doctor"
+  }
