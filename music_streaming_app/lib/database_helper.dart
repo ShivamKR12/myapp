@@ -1,6 +1,6 @@
-import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'package:path_provider/path_provider.dart';
 
 class Song {
   final int id;
@@ -19,7 +19,6 @@ class Song {
     };
   }
 }
-
 
 class DatabaseHelper {
   static const _databaseName = "MyDatabase.db";
@@ -51,11 +50,6 @@ class DatabaseHelper {
   DatabaseHelper._privateConstructor();
   static final DatabaseHelper instance = DatabaseHelper._privateConstructor();
 
-  static String? columnName;
-  
-  static List<int>? columnSongIds;
-
-
   Future<Database> get database async {
     if (_database != null) return _database!;
     _database = await _initDatabase();
@@ -73,11 +67,6 @@ class DatabaseHelper {
         await db.execute("PRAGMA foreign_keys = ON;");
       },
     );
-  }
-
-  Future<String> getAppDocumentsDirectory() async {
-  final directory = await getApplicationDocumentsDirectory();
-  return directory.path;
   }
 
   Future _onCreate(Database db, int version) async {
@@ -175,15 +164,25 @@ class DatabaseHelper {
   }
 
   Future<void> insertDownloadedSong(Song song, String path) async {
-  final db = await database;
-  await db.insert('songs', song.toMap());
-}
+    final db = await database;
+    await db.insert('songs', song.toMap());
+  }
 
-  insertPlaylist(Map<dynamic, String> map) {}
+  // Implement or remove these methods if not needed
+  Future<void> insertPlaylist(Map<String, dynamic> map) async {
+    // TODO: Implementation
+  }
 
-  updatePlaylistSongs(int playlistId, String join) {}
+  Future<void> updatePlaylistSongs(int playlistId, List<int> songIds) async {
+    // TODO: Implementation
+  }
 
-  queryAllPlaylists() {}
+  Future<List<Map<String, dynamic>>> queryAllPlaylists() async {
+    // TODO: Implementation
+    return [];
+  }
 
-  addSongToPlaylist(int songId, int playlistName) {}
+  Future<void> addSongToPlaylist(int songId, int playlistId) async {
+    // TODO: Implementation
+  }
 }
