@@ -8,7 +8,7 @@ import 'playlist_management_screen.dart';
 import 'playlist_service.dart';
 import 'strings.dart';
 
-const String appTitle = 'My Music App'; // Define this as a constant
+const String appTitle = 'My Music App';
 const String pickLocalFilesButtonText = 'Pick Local Files';
 const String createPlaylistButtonText = 'Create Playlist';
 
@@ -47,7 +47,6 @@ class _PlayerScreenState extends State<PlayerScreen> {
   ];
 
   final List<String> _localSongPaths = [];
-
   final Map<String, double> _downloadProgress = {};
   bool _isShuffleOn = false;
   bool _isRepeatOn = false;
@@ -101,7 +100,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
   Future<void> _playSong(String source) async {
     try {
       setState(() {
-        _currentSongPath = source; // Store the path of the current song
+        _currentSongPath = source;
       });
 
       if (source.startsWith('http')) {
@@ -115,7 +114,6 @@ class _PlayerScreenState extends State<PlayerScreen> {
       setState(() => _isPlaying = true);
     } catch (e) {
       _showErrorSnackbar('Error playing song: ${e.toString()}');
-      // Implement retry logic or fallback behavior here if needed
     }
   }
 
@@ -158,7 +156,6 @@ class _PlayerScreenState extends State<PlayerScreen> {
     if (result != null) {
       setState(() {
         _localSongPaths.addAll(result.paths.cast<String>());
-        // Update _songs list with local files
         for (String? path in result.paths) {
           if (path == null) continue;
           _songs.add({
@@ -170,14 +167,13 @@ class _PlayerScreenState extends State<PlayerScreen> {
         }
       });
     } else {
-      // User canceled the picker
       _showErrorSnackbar(errorNoFileSelected);
     }
   }
 
   Future<void> _createPlaylist(String playlistName) async {
     await _playlistService.createPlaylist(playlistName);
-    setState(() {}); // Trigger UI update
+    setState(() {});
   }
 
   void _showCreatePlaylistDialog() {
@@ -265,8 +261,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                   onTap: () {
                     setState(() {
                       _currentSongTitle = _songs[index]['title']!;
-
-                      _playSong(_songs[index]['source']!); // Placeholder source
+                      _playSong(_songs[index]['source']!);
                     });
                   },
                 );
@@ -282,7 +277,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                   style: const TextStyle(fontSize: 18),
                 ),
                 Text(
-                  'Source: $_currentSongPath', // Display the source
+                  'Source: $_currentSongPath',
                   style: const TextStyle(fontSize: 16),
                 ),
                 StreamBuilder<Duration?>(
@@ -337,8 +332,6 @@ class _PlayerScreenState extends State<PlayerScreen> {
                           setState(() {
                             _isRepeatOn = !_isRepeatOn;
                           });
-                          // You might need to add logic here to handle repeat functionality with just_audio
-                          // For example, _player.loopMode = LoopMode.all; for repeating all songs
                         },
                         icon: Icon(
                           Icons.repeat,
@@ -383,14 +376,10 @@ class _PlayerScreenState extends State<PlayerScreen> {
       ),
     );
   }
-  void _validateAudioFile(String filePath) {
-  if (filePath.isEmpty || !filePath.endsWith('.mp3')) {
-      throw Exception("Invalid file format. Please select an MP3 file.");
-  }
-}
-  
-}
 
-extension on String {
-  get path => null;
+  void _validateAudioFile(String filePath) {
+    if (filePath.isEmpty || !filePath.endsWith('.mp3')) {
+      throw Exception("Invalid file format. Please select an MP3 file.");
+    }
+  }
 }
