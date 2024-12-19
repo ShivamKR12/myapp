@@ -40,7 +40,11 @@ class MusicPlayer:
                 song = self.library[index]
                 print(f"Now playing: {song['title']} - {song['artist']}")
                 pygame.mixer.init()
-                pygame.mixer.music.load(song['path'])
+                try:
+                    pygame.mixer.music.load(song['path'])
+                except pygame.error as e:
+                    print(f"Error loading song: {e}")
+                    return
                 pygame.mixer.music.play()
                 while pygame.mixer.music.get_busy():
                     pygame.time.Clock().tick(10)  # Keep the program responsive
@@ -59,8 +63,11 @@ class MusicPlayerGUI:
         self.song_listbox = tk.Listbox(master)
         self.song_listbox.pack(fill=tk.BOTH, expand=True)
 
-        for song in self.player.library:
-            self.song_listbox.insert(tk.END, f"{song['title']} - {song['artist']}")
+        if not self.player.library:
+            self.song_listbox.insert(tk.END, "No songs found in the library.")
+        else:
+            for song in self.player.library:
+                self.song_listbox.insert(tk.END, f"{song['title']} - {song['artist']}")
 
         play_button = tk.Button(master, text="Play", command=self.play_selected_song)
         play_button.pack()
@@ -88,7 +95,7 @@ def main():
 
 app = Flask(__name__)
 
-API_KEY = 'EABCC'
+API_KEY = os.getenv('API_KEY', 'EABCC')
 API_BASE_URL = "https://www.theaudiodb.com/api/v1/json"
 
 @app.route('/search_track/<artist_name>/<track_name>', methods=['GET'])
@@ -112,8 +119,6 @@ def search_track(artist_name, track_name):
 
 
 if __name__ == "__main__":
-    # main()  # Comment out to run the Flask app instead of the GUI
+    # Uncomment the below line to run the GUI
+    # main()
     app.run(debug=True)
-
-if __name__ == "__main__":
-    main()
