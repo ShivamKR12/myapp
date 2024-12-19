@@ -11,7 +11,7 @@ class PlaylistScreen extends StatefulWidget {
 class _PlaylistScreenState extends State<PlaylistScreen> {
   final _playlistNameController = TextEditingController();
   List<Map<String, dynamic>> _playlists = [];
-  int? _selectedPlaylistId; 
+  int? _selectedPlaylistId;
 
   // Sample song data - replace with actual song data from your app
   final List<Map<String, dynamic>> _songs = [
@@ -57,32 +57,44 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
     }
   }
 
-  // Function to handle adding/removing songs from a playlist
   Future<void> _updatePlaylistSongs(int playlistId, int songId, bool add) async {
     try {
-      final playlist = _playlists.firstWhere((p) => p['id'] == playlistId,
-          orElse: () => throw Exception('Playlist not found')); 
+      final playlist = _playlists.firstWhere(
+        (p) => p['id'] == playlistId,
+        orElse: () => throw Exception('Playlist not found'),
+      );
       final songIds = (playlist['song_ids'] as String?) ?? '';
       final songIdList = songIds.isNotEmpty
           ? songIds.split(',').map(int.parse).toList()
           : [];
 
-    if (add && !songIdList.contains(songId)) {
-      songIdList.add(songId);
-    } else if (!add && songIdList.contains(songId)) {
-      songIdList.remove(songId);
-    }
+      if (add && !songIdList.contains(songId)) {
+        songIdList.add(songId);
+      } else if (!add && songIdList.contains(songId)) {
+        songIdList.remove(songId);
+      }
 
-    await newMethod(playlistId, songIdList);
-    _refreshPlaylists();
+      await _updatePlaylistInDatabase(playlistId, songIdList);
+      _refreshPlaylists();
     } catch (e) {
       _showErrorSnackBar('Error updating playlist: $e');
     }
   }
 
-  dynamic newMethod(int playlistId, List<dynamic> songIdList) {
-    return DatabaseHelper.instance.updatePlaylistSongs(
-      playlistId, songIdList.map((id) => id.toString()).join(','));
+  Future<void> _updatePlaylistInDatabase(int playlistId, List<int> songIdList) async {
+    await DatabaseHelper.instance.updatePlaylistSongs(
+      playlistId,
+      songIdList.map((id) => id.toString()).join(','),
+    );
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   @override
@@ -148,8 +160,4 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
       ),
     );
   }
-}
-
-class _showErrorSnackBar {
-  _showErrorSnackBar(String s);
 }
