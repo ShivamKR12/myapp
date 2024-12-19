@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'music_player_screen.dart'; // Import the music player screen
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -18,6 +19,15 @@ class _HomeScreenState extends State<HomeScreen> {
         child: ElevatedButton(
           onPressed: () {
             // Navigate to the music player screen
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => MusicPlayerScreen()),
+            ).catchError((error) {
+              // Handle navigation error
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Failed to navigate: $error')),
+              );
+            });
           },
           child: const Text('Play Music'),
         ),
