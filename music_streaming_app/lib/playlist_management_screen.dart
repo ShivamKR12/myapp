@@ -11,6 +11,7 @@ class PlaylistManagementScreen extends StatefulWidget {
 
 class _PlaylistManagementScreenState extends State<PlaylistManagementScreen> {
   final PlaylistService _playlistService = PlaylistService();
+  final TextEditingController _playlistNameController = TextEditingController();
   List<Map<String, dynamic>> _playlists = [];
 
   @override
@@ -20,50 +21,40 @@ class _PlaylistManagementScreenState extends State<PlaylistManagementScreen> {
   }
 
   Future<void> _loadPlaylists() async {
-    final playlists = await _playlistService.getPlaylists();
+    final playlists = await DatabaseHelper.instance.queryAllPlaylists();
     setState(() {
       _playlists = playlists;
     });
   }
 
-  void _showCreatePlaylistDialog() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        String newPlaylistName = '';
-        return AlertDialog(
-          title: const Text('Create Playlist'),
-          content: TextField(
-            onChanged: (value) => newPlaylistName = value,
-            decoration: const InputDecoration(hintText: 'Playlist Name'),
-          ),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cancel')),
-            TextButton(
-              onPressed: () {
-                if (newPlaylistName.isNotEmpty) {
-                  _createPlaylist(newPlaylistName);
-                  Navigator.pop(context);
-                }
-              },
-              child: const Text('Create'),
-            ),
-          ],
-        );
-      },
+  Future<void> _createPlaylist() async {
+    try {
+      if (_playlistNameController.text.isNotEmpty) {
+        await _playlistService.createPlaylist(_playlistNameController.text);
+        _playlistNameController.clear();
+        _loadPlaylists();
+      }
+    } catch (e) {
+      _showErrorSnackBar('Error creating playlist: $e');
+    }
+  }
+
+  Future<void> _deletePlaylist(int id) async {
+    try {
+      await DatabaseHelper.instance.deletePlaylist(id);
+      _loadPlaylists();
+    } catch (e) {
+      _showErrorSnackBar('Error deleting playlist: $e');
+    }
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(seconds: 2),
+      ),
     );
-  }
-
-  Future<void> _createPlaylist(String playlistName) async {
-    await _playlistService.createPlaylist(playlistName);
-    _loadPlaylists();
-  }
-
-  Future<void> _deletePlaylist(int playlistId) async {
-    await _playlistService.deletePlaylist(playlistId);
-    _loadPlaylists();
   }
 
   @override
@@ -77,21 +68,27 @@ class _PlaylistManagementScreenState extends State<PlaylistManagementScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const Text('Manage your playlists here'),
-            const SizedBox(height: 20),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: TextField(
+                controller: _playlistNameController,
+                decoration: const InputDecoration(hintText: 'Enter playlist name'),
+              ),
+            ),
             ElevatedButton(
-              onPressed: _showCreatePlaylistDialog,
+              onPressed: _createPlaylist,
               child: const Text('Create Playlist'),
             ),
-            const SizedBox(height: 20),
             Expanded(
               child: ListView.builder(
                 itemCount: _playlists.length,
                 itemBuilder: (context, index) {
+                  final playlist = _playlists[index];
                   return ListTile(
-                    title: Text(_playlists[index]['name']),
+                    title: Text(playlist['name']),
                     trailing: IconButton(
                       icon: const Icon(Icons.delete),
-                      onPressed: () => _deletePlaylist(_playlists[index]['id']),
+                      onPressed: () => _deletePlaylist(playlist['id']),
                     ),
                   );
                 },
