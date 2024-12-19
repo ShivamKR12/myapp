@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'player_screen.dart';
-import 'playlist_screen.dart';
+import 'player_screen.dart'; // Import the player screen file
+import 'playlist_screen.dart'; // Import the playlist screen file
 import 'home_screen.dart'; // Import the home screen file
 
 void main() {
-  runApp(const MyApp());
+  runApp(const MyApp()); // Run the app
 }
 
 class MyApp extends StatelessWidget {
@@ -38,7 +38,7 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _selectedIndex = 0;
+  int _selectedIndex = 0; // Track the selected index
   final List<Widget> _screens = [
     const HomeScreen(),
     const PlayerScreen(), 
@@ -47,15 +47,15 @@ class _MainScreenState extends State<MainScreen> {
 
   void _onItemTapped(int index) {
     setState(() {
-      _selectedIndex = index;
+      _selectedIndex = index; // Update the selected index
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _screens[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(        
+      body: _screens[_selectedIndex], // Display the selected screen
+      bottomNavigationBar: BottomNavigationBar(
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home), label: 'Home'),
@@ -64,11 +64,9 @@ class _MainScreenState extends State<MainScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.playlist_play), label: 'Playlists'),
         ],
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
+        currentIndex: _selectedIndex, // Set the current index
+        onTap: _onItemTapped, // Handle item tap
       ),
     );
   }
 }
-
-
