@@ -29,10 +29,10 @@ pkg_check_modules(GIO REQUIRED IMPORTED_TARGET gio-2.0)
 set(FLUTTER_LIBRARY "${EPHEMERAL_DIR}/libflutter_linux_gtk.so")
 
 # Published to parent scope for install step.
-set(FLUTTER_LIBRARY ${FLUTTER_LIBRARY} PARENT_SCOPE)
-set(FLUTTER_ICU_DATA_FILE "${EPHEMERAL_DIR}/icudtl.dat" PARENT_SCOPE)
-set(PROJECT_BUILD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/build/" PARENT_SCOPE)
-set(AOT_LIBRARY "${CMAKE_CURRENT_SOURCE_DIR}/build/lib/libapp.so" PARENT_SCOPE)
+set(FLUTTER_LIBRARY ${FLUTTER_LIBRARY})
+set(FLUTTER_ICU_DATA_FILE "${EPHEMERAL_DIR}/icudtl.dat")
+set(PROJECT_BUILD_DIR "${CMAKE_CURRENT_SOURCE_DIR}/build/")
+set(AOT_LIBRARY "${CMAKE_CURRENT_SOURCE_DIR}/build/lib/libapp.so")
 
 list(APPEND FLUTTER_LIBRARY_HEADERS
   "fl_basic_message_channel.h"

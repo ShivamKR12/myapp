@@ -1,7 +1,12 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
-import 'dart:io';
+import 'package:logger/logger.dart'; // Ensure this line is present
+
+// Initialize the logger
+final logger = Logger();
+
+// ... rest of the code ...
 
 class Song {
   final int id;
@@ -116,7 +121,7 @@ class DatabaseHelper {
     try {
       return await db.insert(playlistTable, {columnPlaylistName: playlistName});
     } catch (e) {
-      print('Error creating playlist: $e');
+      logger.e('Error creating playlist: $e'); // Replace print with logger
       return -1; // Error indicator
     }
   }
@@ -126,7 +131,7 @@ class DatabaseHelper {
     try {
       return await db.delete(playlistTable, where: '$columnPlaylistId = ?', whereArgs: [id]);
     } catch (e) {
-      print('Error deleting playlist: $e');
+      logger.e('Error deleting playlist: $e'); // Replace print with logger
       return -1; // Error indicator
     }
   }
@@ -140,7 +145,7 @@ class DatabaseHelper {
         columnIsDownloaded: 1,
       });
     } catch (e) {
-      print('Error marking song as downloaded: $e');
+      logger.e('Error marking song as downloaded: $e'); // Replace print with logger
     }
   }
 
@@ -154,7 +159,7 @@ class DatabaseHelper {
         whereArgs: [songId],
       );
     } catch (e) {
-      print('Error updating song download status: $e');
+      logger.e('Error updating song download status: $e'); // Replace print with logger
     }
   }
 
@@ -178,9 +183,13 @@ class DatabaseHelper {
     return directory.path;
   }
 
-  // Implement or remove these methods if not needed
   Future<void> insertPlaylist(Map<String, dynamic> map) async {
-    // TODO: Implementation
+    final db = await database;
+    try {
+      await db.insert(playlistTable, map);
+    } catch (e) {
+      logger.e('Error inserting playlist: $e');
+    }
   }
 
   Future<void> updatePlaylistSongs(int playlistId, List<int> songIds) async {
@@ -195,11 +204,24 @@ class DatabaseHelper {
   }
 
   Future<List<Map<String, dynamic>>> queryAllPlaylists() async {
-    // TODO: Implementation
-    return [];
+    Database db = await instance.database;
+    try {
+      return await db.query(playlistTable);
+    } catch (e) {
+      logger.e('Error querying all playlists: $e');
+      return [];
+    }
   }
 
   Future<void> addSongToPlaylist(int songId, int playlistId) async {
-    // TODO: Implementation
+    final db = await database;
+    try {
+      await db.insert(playlistSongsTable, {
+        'playlist_id': playlistId,
+        'song_id': songId,
+      });
+    } catch (e) {
+      logger.e('Error adding song to playlist: $e');
+    }
   }
 }
