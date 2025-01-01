@@ -268,99 +268,101 @@ class _PlayerScreenState extends State<PlayerScreen> {
               },
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                Text(
-                  'Now Playing: $_currentSongTitle',
-                  style: const TextStyle(fontSize: 18),
-                ),
-                Text(
-                  'Source: $_currentSongPath',
-                  style: const TextStyle(fontSize: 16),
-                ),
-                StreamBuilder<Duration?>(
-                  stream: _player.durationStream,
-                  builder: (context, snapshot) {
-                    final duration = snapshot.data ?? Duration.zero;
-                    return Slider(
-                      min: 0.0,
-                      max: duration.inMilliseconds.toDouble(),
-                      value: _player.position.inMilliseconds.toDouble(),
-                      onChanged: (value) {
-                        _player.seek(Duration(milliseconds: value.toInt()));
-                      },
-                    );
-                  },
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    Tooltip(
-                      message: 'Shuffle',
-                      child: IconButton(
-                        onPressed: () {
-                          setState(() {
-                            _isShuffleOn = !_isShuffleOn;
-                          });
-                          _player.setShuffleModeEnabled(_isShuffleOn);
-                        },
-                        icon: Icon(
-                          Icons.shuffle,
-                          color: _isShuffleOn ? Colors.blue : Colors.grey,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () async {
-                        if (_isPlaying) {
-                          await _player.pause();
-                        } else {
-                          await _player.play();
-                        }
-                        setState(() {
-                          _isPlaying = !_isPlaying;
-                        });
-                      },
-                      icon: Icon(_isPlaying ? Icons.pause : Icons.play_arrow),
-                    ),
-                    Tooltip(
-                      message: 'Repeat',
-                      child: IconButton(
-                        onPressed: () {
-                          setState(() {
-                            _isRepeatOn = !_isRepeatOn;
-                          });
-                        },
-                        icon: Icon(
-                          Icons.repeat,
-                          color: _isRepeatOn ? Colors.blue : Colors.grey,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                Row(
-                  children: [
-                    const Icon(Icons.volume_mute),
-                    Expanded(
-                      child: Slider(
-                        value: _player.volume,
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  Text(
+                    'Now Playing: $_currentSongTitle',
+                    style: const TextStyle(fontSize: 18),
+                  ),
+                  Text(
+                    'Source: $_currentSongPath',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  StreamBuilder<Duration?>(
+                    stream: _player.durationStream,
+                    builder: (context, snapshot) {
+                      final duration = snapshot.data ?? Duration.zero;
+                      return Slider(
                         min: 0.0,
-                        max: 1.0,
+                        max: duration.inMilliseconds.toDouble(),
+                        value: _player.position.inMilliseconds.toDouble(),
                         onChanged: (value) {
+                          _player.seek(Duration(milliseconds: value.toInt()));
+                        },
+                      );
+                    },
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      Tooltip(
+                        message: 'Shuffle',
+                        child: IconButton(
+                          onPressed: () {
+                            setState(() {
+                              _isShuffleOn = !_isShuffleOn;
+                            });
+                            _player.setShuffleModeEnabled(_isShuffleOn);
+                          },
+                          icon: Icon(
+                            Icons.shuffle,
+                            color: _isShuffleOn ? Colors.blue : Colors.grey,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () async {
+                          if (_isPlaying) {
+                            await _player.pause();
+                          } else {
+                            await _player.play();
+                          }
                           setState(() {
-                            _player.setVolume(value);
+                            _isPlaying = !_isPlaying;
                           });
                         },
+                        icon: Icon(_isPlaying ? Icons.pause : Icons.play_arrow),
                       ),
-                    ),
-                    const Icon(Icons.volume_up),
-                    Text('${(_player.volume * 100).toInt()}%'),
-                  ],
-                ),
-              ],
+                      Tooltip(
+                        message: 'Repeat',
+                        child: IconButton(
+                          onPressed: () {
+                            setState(() {
+                              _isRepeatOn = !_isRepeatOn;
+                            });
+                          },
+                          icon: Icon(
+                            Icons.repeat,
+                            color: _isRepeatOn ? Colors.blue : Colors.grey,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      const Icon(Icons.volume_mute),
+                      Expanded(
+                        child: Slider(
+                          value: _player.volume,
+                          min: 0.0,
+                          max: 1.0,
+                          onChanged: (value) {
+                            setState(() {
+                              _player.setVolume(value);
+                            });
+                          },
+                        ),
+                      ),
+                      const Icon(Icons.volume_up),
+                      Text('${(_player.volume * 100).toInt()}%'),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ],
