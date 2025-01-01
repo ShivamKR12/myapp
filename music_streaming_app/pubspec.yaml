@@ -36,10 +36,10 @@ dependencies:
     sdk: flutter
   just_audio: ^0.9.32  
   audio_service: ^0.18.0
-  sqlite3: ^2.0.0+1 # Or any compatible version
+  sqlite3: ^2.0.0 # Or any compatible version
   path_provider: ^2.0.5
   http: ^0.13.5 
-  sqflite: ^2.0.0+3
+  sqflite: ^2.3.0
   file_picker: ^8.1.5
   logger: ^2.5.0
 

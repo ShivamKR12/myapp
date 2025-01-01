@@ -21,7 +21,7 @@ class _HomeScreenState extends State<HomeScreen> {
             // Navigate to the music player screen
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => MusicPlayerScreen()),
+              MaterialPageRoute(builder: (context) => const MusicPlayerScreen()),
             ).catchError((error) {
               // Handle navigation error
               ScaffoldMessenger.of(context).showSnackBar(
