@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'music_player_screen.dart'; // Import the music player screen
+import 'player_screen.dart'; // Import the music player screen
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

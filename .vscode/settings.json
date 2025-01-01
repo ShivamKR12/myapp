@@ -1,4 +1,5 @@
 {
     "IDX.aI.enableInlineCompletion": true,
-    "IDX.aI.enableCodebaseIndexing": true
+    "IDX.aI.enableCodebaseIndexing": true,
+    "cmake.sourceDirectory": "/workspaces/myapp/music_streaming_app/linux/flutter"
 }

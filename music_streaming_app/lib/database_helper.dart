@@ -1,6 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
+import 'dart:io';
 
 class Song {
   final int id;
@@ -43,6 +44,10 @@ class DatabaseHelper {
   static const downloadedSongsTable = 'downloaded_songs';
   static const columnFilePath = 'file_path';
   static const columnIsDownloaded = 'is_downloaded';
+
+  // Additional columns
+  static const columnName = 'name';
+  static const columnSongIds = 'song_ids';
 
   // Singleton instance
   static Database? _database;
@@ -168,13 +173,25 @@ class DatabaseHelper {
     await db.insert('songs', song.toMap());
   }
 
+  Future<String> getAppDocumentsDirectory() async {
+    final directory = await getApplicationDocumentsDirectory();
+    return directory.path;
+  }
+
   // Implement or remove these methods if not needed
   Future<void> insertPlaylist(Map<String, dynamic> map) async {
     // TODO: Implementation
   }
 
   Future<void> updatePlaylistSongs(int playlistId, List<int> songIds) async {
-    // TODO: Implementation
+    final db = await database;
+    final songIdsString = songIds.map((id) => id.toString()).join(',');
+    await db.update(
+      'playlists',
+      {'song_ids': songIdsString},
+      where: 'id = ?',
+      whereArgs: [playlistId],
+    );
   }
 
   Future<List<Map<String, dynamic>>> queryAllPlaylists() async {

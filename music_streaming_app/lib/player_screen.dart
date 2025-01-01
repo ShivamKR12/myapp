@@ -119,7 +119,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
 
   Future<void> _downloadSong(String songId, String sourceUrl) async {
     final dir = await DatabaseHelper.instance.getAppDocumentsDirectory();
-    final file = File('${dir.path}/$songId.mp3');
+    final file = File('$dir/$songId.mp3'); // Corrected the path access
 
     setState(() {
       _downloadProgress[songId] = 0.0;
@@ -381,5 +381,21 @@ class _PlayerScreenState extends State<PlayerScreen> {
     if (filePath.isEmpty || !filePath.endsWith('.mp3')) {
       throw Exception("Invalid file format. Please select an MP3 file.");
     }
+  }
+}
+
+class MusicPlayerScreen extends StatelessWidget {
+  const MusicPlayerScreen({super.key}); // Added key parameter
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Music Player'),
+      ),
+      body: const Center(
+        child: Text('Music Player Screen'),
+      ),
+    );
   }
 }

@@ -66,7 +66,7 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
       final songIds = (playlist['song_ids'] as String?) ?? '';
       final songIdList = songIds.isNotEmpty
           ? songIds.split(',').map(int.parse).toList()
-          : [];
+          : <int>[]; // Ensure the list is of type List<int>
 
       if (add && !songIdList.contains(songId)) {
         songIdList.add(songId);
@@ -84,7 +84,7 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
   Future<void> _updatePlaylistInDatabase(int playlistId, List<int> songIdList) async {
     await DatabaseHelper.instance.updatePlaylistSongs(
       playlistId,
-      songIdList.map((id) => id.toString()).join(','),
+      songIdList,
     );
   }
 

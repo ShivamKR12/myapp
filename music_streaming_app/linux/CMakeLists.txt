@@ -117,6 +117,13 @@ install(FILES "${FLUTTER_ICU_DATA_FILE}" DESTINATION "${INSTALL_BUNDLE_DATA_DIR}
 install(FILES "${FLUTTER_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
   COMPONENT Runtime)
 
+# Ensure the native assets directory exists before installing
+file(MAKE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/flutter/build/native_assets/linux")
+
+install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/flutter/build/native_assets/linux"
+  DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
+  COMPONENT Runtime)
+
 foreach(bundled_library ${PLUGIN_BUNDLED_LIBRARIES})
   install(FILES "${bundled_library}"
     DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
@@ -128,6 +135,13 @@ set(NATIVE_ASSETS_DIR "${PROJECT_BUILD_DIR}native_assets/linux/")
 install(DIRECTORY "${NATIVE_ASSETS_DIR}"
    DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
    COMPONENT Runtime)
+
+# Ensure the native assets directory exists before installing
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/flutter/build/native_assets/linux")
+  install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/flutter/build/native_assets/linux"
+    DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
+    COMPONENT Runtime)
+endif()
 
 # Fully re-copy the assets directory on each build to avoid having stale files
 # from a previous install.
