@@ -101,62 +101,64 @@ class _PlaylistScreenState extends State<PlaylistScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Playlists')),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: TextField(
-              controller: _playlistNameController,
-              decoration: const InputDecoration(hintText: 'Enter playlist name'),
+      body: SingleChildScrollView( // Wrap the Column with SingleChildScrollView
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: TextField(
+                controller: _playlistNameController,
+                decoration: const InputDecoration(hintText: 'Enter playlist name'),
+              ),
             ),
-          ),
-          ElevatedButton(
-            onPressed: _createPlaylist,
-            child: const Text('Create Playlist'),
-          ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: _playlists.length,
-              itemBuilder: (context, index) {
-                final playlist = _playlists[index];
-                return ListTile(
-                  title: Text(playlist['name']),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete),
-                    onPressed: () => _deletePlaylist(playlist['id']),
-                  ),
-                  onTap: () {
-                    setState(() {
-                      _selectedPlaylistId = playlist['id'];
-                    });
-                  },
-                );
-              },
+            ElevatedButton(
+              onPressed: _createPlaylist,
+              child: const Text('Create Playlist'),
             ),
-          ),
-          if (_selectedPlaylistId != null)
             Expanded(
               child: ListView.builder(
-                itemCount: _songs.length,
+                itemCount: _playlists.length,
                 itemBuilder: (context, index) {
-                  final song = _songs[index];
-                  final playlist = _playlists.firstWhere((p) => p['id'] == _selectedPlaylistId);
-                  final songIds = (playlist['song_ids'] as String?) ?? '';
-                  final songIdList = songIds.isNotEmpty ? songIds.split(',').map(int.parse).toList() : [];
-                  final isInPlaylist = songIdList.contains(song['id']);
-
-                  return CheckboxListTile(
-                    title: Text(song['title']),
-                    subtitle: Text(song['artist']),
-                    value: isInPlaylist,
-                    onChanged: (value) {
-                      _updatePlaylistSongs(_selectedPlaylistId!, song['id'], value!);
+                  final playlist = _playlists[index];
+                  return ListTile(
+                    title: Text(playlist['name']),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete),
+                      onPressed: () => _deletePlaylist(playlist['id']),
+                    ),
+                    onTap: () {
+                      setState(() {
+                        _selectedPlaylistId = playlist['id'];
+                      });
                     },
                   );
                 },
               ),
             ),
-        ],
+            if (_selectedPlaylistId != null)
+              Expanded(
+                child: ListView.builder(
+                  itemCount: _songs.length,
+                  itemBuilder: (context, index) {
+                    final song = _songs[index];
+                    final playlist = _playlists.firstWhere((p) => p['id'] == _selectedPlaylistId);
+                    final songIds = (playlist['song_ids'] as String?) ?? '';
+                    final songIdList = songIds.isNotEmpty ? songIds.split(',').map(int.parse).toList() : [];
+                    final isInPlaylist = songIdList.contains(song['id']);
+
+                    return CheckboxListTile(
+                      title: Text(song['title']),
+                      subtitle: Text(song['artist']),
+                      value: isInPlaylist,
+                      onChanged: (value) {
+                        _updatePlaylistSongs(_selectedPlaylistId!, song['id'], value!);
+                      },
+                    );
+                  },
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
