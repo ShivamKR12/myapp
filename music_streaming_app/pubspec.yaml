@@ -38,6 +38,7 @@ dependencies:
   audio_service: ^0.18.0
   sqlite3: ^2.0.0 # Or any compatible version
   path_provider: ^2.0.5
+  path: ^1.8.0
   http: ^0.13.5 
   sqflite: ^2.3.0
   file_picker: ^8.1.5
