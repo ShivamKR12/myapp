@@ -13,6 +13,7 @@ class _PlaylistManagementScreenState extends State<PlaylistManagementScreen> {
   final PlaylistService _playlistService = PlaylistService();
   final TextEditingController _playlistNameController = TextEditingController();
   List<Map<String, dynamic>> _playlists = [];
+  int? _selectedPlaylistId;
 
   @override
   void initState() {
@@ -46,6 +47,37 @@ class _PlaylistManagementScreenState extends State<PlaylistManagementScreen> {
     } catch (e) {
       _showErrorSnackBar('Error deleting playlist: $e');
     }
+  }
+
+  Future<void> _updatePlaylistSongs(int playlistId, int songId, bool add) async {
+    try {
+      final playlist = _playlists.firstWhere(
+        (p) => p['id'] == playlistId,
+        orElse: () => throw Exception('Playlist not found'),
+      );
+      final songIds = (playlist['song_ids'] as String?) ?? '';
+      final songIdList = songIds.isNotEmpty
+          ? songIds.split(',').map(int.parse).toList()
+          : <int>[]; // Ensure the list is of type List<int>
+
+      if (add && !songIdList.contains(songId)) {
+        songIdList.add(songId);
+      } else if (!add && songIdList.contains(songId)) {
+        songIdList.remove(songId);
+      }
+
+      await _updatePlaylistInDatabase(playlistId, songIdList);
+      _loadPlaylists();
+    } catch (e) {
+      _showErrorSnackBar('Error updating playlist: $e');
+    }
+  }
+
+  Future<void> _updatePlaylistInDatabase(int playlistId, List<int> songIdList) async {
+    await DatabaseHelper.instance.updatePlaylistSongs(
+      playlistId,
+      songIdList,
+    );
   }
 
   void _showErrorSnackBar(String message) {
@@ -90,10 +122,35 @@ class _PlaylistManagementScreenState extends State<PlaylistManagementScreen> {
                       icon: const Icon(Icons.delete),
                       onPressed: () => _deletePlaylist(playlist['id']),
                     ),
+                    onTap: () {
+                      setState(() {
+                        _selectedPlaylistId = playlist['id'];
+                      });
+                    },
                   );
                 },
               ),
             ),
+            if (_selectedPlaylistId != null)
+              Expanded(
+                child: ListView.builder(
+                  itemCount: _playlists.length,
+                  itemBuilder: (context, index) {
+                    final playlist = _playlists[index];
+                    final songIds = (playlist['song_ids'] as String?) ?? '';
+                    final songIdList = songIds.isNotEmpty ? songIds.split(',').map(int.parse).toList() : [];
+                    final isInPlaylist = songIdList.contains(playlist['id']);
+
+                    return CheckboxListTile(
+                      title: Text(playlist['name']),
+                      value: isInPlaylist,
+                      onChanged: (value) {
+                        _updatePlaylistSongs(_selectedPlaylistId!, playlist['id'], value!);
+                      },
+                    );
+                  },
+                ),
+              ),
           ],
         ),
       ),

@@ -1,162 +1,227 @@
+import 'package:blackhole/liked.dart';
+import 'package:blackhole/miniplayer.dart';
 import 'package:flutter/material.dart';
-import 'database_helper.dart';
+import 'package:hive/hive.dart';
 
 class PlaylistScreen extends StatefulWidget {
-  const PlaylistScreen({super.key});
-
   @override
-  State<PlaylistScreen> createState() => _PlaylistScreenState();
+  _PlaylistScreenState createState() => _PlaylistScreenState();
 }
 
 class _PlaylistScreenState extends State<PlaylistScreen> {
-  final _playlistNameController = TextEditingController();
-  List<Map<String, dynamic>> _playlists = [];
-  int? _selectedPlaylistId;
-
-  // Sample song data - replace with actual song data from your app
-  final List<Map<String, dynamic>> _songs = [
-    {'id': 1, 'title': 'Song 1', 'artist': 'Artist A'},
-    {'id': 2, 'title': 'Song 2', 'artist': 'Artist B'},
-    {'id': 3, 'title': 'Song 3', 'artist': 'Artist C'},
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _refreshPlaylists();
-  }
-
-  Future<void> _refreshPlaylists() async {
-    final playlists = await DatabaseHelper.instance.queryAllPlaylists();
-    setState(() {
-      _playlists = playlists;
-    });
-  }
-
-  Future<void> _createPlaylist() async {
-    try {
-      if (_playlistNameController.text.isNotEmpty) {
-        await DatabaseHelper.instance.insertPlaylist({
-          DatabaseHelper.columnName: _playlistNameController.text,
-          DatabaseHelper.columnSongIds: '', // Initially empty song list
-        });
-        _playlistNameController.clear();
-        _refreshPlaylists();
-      }
-    } catch (e) {
-      _showErrorSnackBar('Error creating playlist: $e');
-    }
-  }
-
-  Future<void> _deletePlaylist(int id) async {
-    try {
-      await DatabaseHelper.instance.deletePlaylist(id);
-      _refreshPlaylists();
-    } catch (e) {
-      _showErrorSnackBar('Error deleting playlist: $e');
-    }
-  }
-
-  Future<void> _updatePlaylistSongs(int playlistId, int songId, bool add) async {
-    try {
-      final playlist = _playlists.firstWhere(
-        (p) => p['id'] == playlistId,
-        orElse: () => throw Exception('Playlist not found'),
-      );
-      final songIds = (playlist['song_ids'] as String?) ?? '';
-      final songIdList = songIds.isNotEmpty
-          ? songIds.split(',').map(int.parse).toList()
-          : <int>[]; // Ensure the list is of type List<int>
-
-      if (add && !songIdList.contains(songId)) {
-        songIdList.add(songId);
-      } else if (!add && songIdList.contains(songId)) {
-        songIdList.remove(songId);
-      }
-
-      await _updatePlaylistInDatabase(playlistId, songIdList);
-      _refreshPlaylists();
-    } catch (e) {
-      _showErrorSnackBar('Error updating playlist: $e');
-    }
-  }
-
-  Future<void> _updatePlaylistInDatabase(int playlistId, List<int> songIdList) async {
-    await DatabaseHelper.instance.updatePlaylistSongs(
-      playlistId,
-      songIdList,
-    );
-  }
-
-  void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
-
+  Box settingsBox = Hive.box('settings');
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Playlists')),
-      body: SingleChildScrollView( // Wrap the Column with SingleChildScrollView
-        child: Column(
+    var playlistNames;
+    try {
+      playlistNames = settingsBox.get('playlists').toList();
+    } catch (e) {
+      playlistNames = null;
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: Theme.of(context).brightness == Brightness.dark
+              ? [
+                  Colors.grey[850],
+                  Colors.grey[900],
+                  Colors.black,
+                ]
+              : [
+                  Colors.white,
+                  Theme.of(context).canvasColor,
+                ],
+        ),
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: Text(
+            'Playlists',
+          ),
+          centerTitle: true,
+          backgroundColor: Theme.of(context).brightness == Brightness.dark
+              ? Colors.transparent
+              : Theme.of(context).accentColor,
+          elevation: 0,
+        ),
+        body: Stack(
           children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: TextField(
-                controller: _playlistNameController,
-                decoration: const InputDecoration(hintText: 'Enter playlist name'),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: _createPlaylist,
-              child: const Text('Create Playlist'),
-            ),
-            Expanded(
-              child: ListView.builder(
-                itemCount: _playlists.length,
-                itemBuilder: (context, index) {
-                  final playlist = _playlists[index];
-                  return ListTile(
-                    title: Text(playlist['name']),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete),
-                      onPressed: () => _deletePlaylist(playlist['id']),
+            SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SizedBox(height: 5),
+                  ListTile(
+                    title: Text('Create Playlist'),
+                    leading: Icon(
+                      Icons.add_rounded,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? null
+                          : Colors.grey[700],
                     ),
                     onTap: () {
-                      setState(() {
-                        _selectedPlaylistId = playlist['id'];
-                      });
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          final _controller = TextEditingController();
+                          return AlertDialog(
+                            content: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(
+                                      'Create new playlist',
+                                      style: TextStyle(
+                                          color: Theme.of(context).accentColor),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(
+                                  height: 10,
+                                ),
+                                TextField(
+                                    controller: _controller,
+                                    autofocus: true,
+                                    onSubmitted: (value) {
+                                      print('PLAYLIST NAMES IS $playlistNames');
+                                      playlistNames == null
+                                          ? playlistNames = [value]
+                                          : playlistNames.add(value);
+                                      // print(
+                                      //     'PLAYLIST NAMES NOW IS $playlistNames');
+                                      settingsBox.put(
+                                          'playlists', playlistNames);
+                                      Navigator.pop(context);
+                                      setState(() {});
+                                    }),
+                              ],
+                            ),
+                            actions: [
+                              TextButton(
+                                style: TextButton.styleFrom(
+                                  primary: Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? Colors.white
+                                      : Colors.grey[700],
+                                  //       backgroundColor: Theme.of(context).accentColor,
+                                ),
+                                child: Text("Cancel"),
+                                onPressed: () {
+                                  Navigator.pop(context);
+                                },
+                              ),
+                              TextButton(
+                                style: TextButton.styleFrom(
+                                  primary: Colors.white,
+                                  backgroundColor:
+                                      Theme.of(context).accentColor,
+                                ),
+                                child: Text(
+                                  "Ok",
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                                onPressed: () {
+                                  playlistNames == null
+                                      ? playlistNames = [_controller.text]
+                                      : playlistNames.add(_controller.text);
+                                  print('Putting as $playlistNames');
+                                  settingsBox.put('playlists', playlistNames);
+                                  Navigator.pop(context);
+                                  setState(() {});
+                                },
+                              ),
+                              SizedBox(
+                                width: 5,
+                              ),
+                            ],
+                          );
+                        },
+                      );
                     },
-                  );
-                },
+                  ),
+                  playlistNames == null
+                      ? SizedBox()
+                      : ListView.builder(
+                          physics: NeverScrollableScrollPhysics(),
+                          shrinkWrap: true,
+                          itemCount: playlistNames.length,
+                          itemBuilder: (context, index) {
+                            print('PLAYLIST IS $playlistNames');
+                            return ListTile(
+                              leading: Icon(
+                                Icons.music_note_rounded,
+                                color: Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? null
+                                    : Colors.grey[700],
+                              ),
+                              title: Text('${playlistNames[index]}'),
+                              trailing: PopupMenuButton(
+                                icon: Icon(Icons.more_vert_rounded),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius:
+                                        BorderRadius.all(Radius.circular(7.0))),
+                                onSelected: (value) async {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      elevation: 6,
+                                      backgroundColor: Colors.grey[900],
+                                      behavior: SnackBarBehavior.floating,
+                                      content: Text(
+                                        'Deleted ${playlistNames[index]}',
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                      action: SnackBarAction(
+                                        textColor:
+                                            Theme.of(context).accentColor,
+                                        label: 'Ok',
+                                        onPressed: () {},
+                                      ),
+                                    ),
+                                  );
+                                  await Hive.openBox(playlistNames[index]);
+                                  await Hive.box(playlistNames[index])
+                                      .deleteFromDisk();
+                                  await playlistNames.removeAt(index);
+                                  await settingsBox.put(
+                                      'playlists', playlistNames);
+                                  setState(() {});
+                                },
+                                itemBuilder: (context) => [
+                                  PopupMenuItem(
+                                    value: 0,
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.delete),
+                                        Spacer(),
+                                        Text('Delete playlist'),
+                                        Spacer(),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              onTap: () async {
+                                await Hive.openBox(playlistNames[index]);
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => LikedSongs(
+                                            playlistName:
+                                                playlistNames[index])));
+                                // Navigator.pushNamed(context, '/liked');
+                              },
+                            );
+                          })
+                ],
               ),
             ),
-            if (_selectedPlaylistId != null)
-              Expanded(
-                child: ListView.builder(
-                  itemCount: _songs.length,
-                  itemBuilder: (context, index) {
-                    final song = _songs[index];
-                    final playlist = _playlists.firstWhere((p) => p['id'] == _selectedPlaylistId);
-                    final songIds = (playlist['song_ids'] as String?) ?? '';
-                    final songIdList = songIds.isNotEmpty ? songIds.split(',').map(int.parse).toList() : [];
-                    final isInPlaylist = songIdList.contains(song['id']);
-
-                    return CheckboxListTile(
-                      title: Text(song['title']),
-                      subtitle: Text(song['artist']),
-                      value: isInPlaylist,
-                      onChanged: (value) {
-                        _updatePlaylistSongs(_selectedPlaylistId!, song['id'], value!);
-                      },
-                    );
-                  },
-                ),
-              ),
+            MiniPlayer(),
           ],
         ),
       ),

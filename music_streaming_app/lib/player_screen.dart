@@ -7,6 +7,7 @@ import 'database_helper.dart';
 import 'playlist_management_screen.dart';
 import 'playlist_service.dart';
 import 'strings.dart';
+import 'package:logger/logger.dart';
 
 const String appTitle = 'My Music App';
 const String pickLocalFilesButtonText = 'Pick Local Files';
@@ -51,6 +52,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
   bool _isShuffleOn = false;
   bool _isRepeatOn = false;
   final PlaylistService _playlistService = PlaylistService();
+  final logger = Logger();
 
   @override
   void dispose() {
@@ -114,6 +116,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
       setState(() => _isPlaying = true);
     } catch (e) {
       _showErrorSnackbar('Error playing song: ${e.toString()}');
+      logger.e('Error playing song: $e');
     }
   }
 
@@ -136,10 +139,13 @@ class _PlayerScreenState extends State<PlayerScreen> {
       DatabaseHelper.instance.insertDownloadedSong(songId as Song, file.path);
     } on SocketException {
       _showErrorSnackbar('No internet connection');
+      logger.e('No internet connection');
     } on HttpException catch (e) {
       _showErrorSnackbar('Download failed: ${e.message}');
+      logger.e('Download failed: ${e.message}');
     } on IOException catch (e) {
       _showErrorSnackbar('File write error: ${e.toString()}');
+      logger.e('File write error: $e');
     } finally {
       setState(() {
         _downloadProgress[songId] = 1.0;
@@ -168,6 +174,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
       });
     } else {
       _showErrorSnackbar(errorNoFileSelected);
+      logger.e('No file selected');
     }
   }
 
