@@ -220,238 +220,40 @@ class DatabaseHelper {
       logger.e('Error adding song to playlist: $e');
     }
   }
-}
 
-class PlayerScreen extends StatefulWidget {
-  const PlayerScreen({super.key});
-
-  @override
-  State<PlayerScreen> createState() => _PlayerScreenState();
-}
-
-class _PlayerScreenState extends State<PlayerScreen> {
-  final _player = AudioPlayer();
-  bool _isPlaying = false;
-  String _currentSongTitle = 'No song selected';
-  final String _currentSongPath = '';
-
-  final List<Map<String, dynamic>> _songs = [];
-  final List<String> _localSongPaths = [];
-  final Map<String, double> _downloadProgress = {};
-  bool _isShuffleOn = false;
-  bool _isRepeatOn = false;
-
-  @override
-  void dispose() {
-    _player.dispose();
-    super.dispose();
-  }
-
-  Future<void> _pickLocalFiles(BuildContext context) async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
-      type: FileType.audio,
-      allowMultiple: true,
-    );
-
-    if (result != null) {
-      if (!mounted) return;
-      setState(() {
-        _localSongPaths.addAll(result.paths.whereType<String>());
-        for (String path in _localSongPaths) {
-          _songs.add({
-            'title': path.split('/').last,
-            'artist': 'Unknown',
-            'source': path,
-            'id': path.hashCode.toString(),
-          });
-        }
-      });
-    } else {
-      if (!mounted) return;
-      _showErrorSnackbar(context, 'No file selected');
+  Future<void> updateSong(Song song) async {
+    final db = await database;
+    try {
+      await db.update(
+        songsTable,
+        song.toMap(),
+        where: '$columnSongId = ?',
+        whereArgs: [song.id],
+      );
+    } catch (e) {
+      logger.e('Error updating song: $e');
     }
   }
 
-  void _showCreatePlaylistDialog() {
-    // Implement the method to show a dialog for creating a playlist
+  Future<void> deleteSong(int id) async {
+    final db = await database;
+    try {
+      await db.delete(
+        songsTable,
+        where: '$columnSongId = ?',
+        whereArgs: [id],
+      );
+    } catch (e) {
+      logger.e('Error deleting song: $e');
+    }
   }
 
-  Future<void> _downloadSong(String songId, String source) async {
-    // Implement the method to download a song
-  }
-
-  Future<void> _playSong(String source) async {
-    // Implement the method to play a song
-  }
-
-  void _showErrorSnackbar(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('My Music App')),
-      body: Column(
-        children: [
-          ElevatedButton(
-            onPressed: () => _pickLocalFiles(context),
-            child: const Text('Pick Local Files'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              _showCreatePlaylistDialog();
-            },
-            child: const Text('Create Playlist'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => const PlaylistManagementScreen()));
-            },
-            child: const Text('View Playlists'),
-          ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: _songs.length,
-              itemBuilder: (context, index) {
-                return ListTile(
-                  title: Text(_songs[index]['title']!),
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (_downloadProgress.containsKey(_songs[index]['id']) &&
-                          _downloadProgress[_songs[index]['id']]! < 1.0)
-                        SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            value: _downloadProgress[_songs[index]['id']],
-                          ),
-                        )
-                      else
-                        IconButton(
-                          icon: const Icon(Icons.download),
-                          onPressed: () => _downloadSong(
-                              _songs[index]['id']!, _songs[index]['source']!),
-                        ),
-                    ],
-                  ),
-                  subtitle: Text(_songs[index]['artist']!),
-                  onTap: () {
-                    setState(() {
-                      _currentSongTitle = _songs[index]['title']!;
-                      _playSong(_songs[index]['source']!);
-                    });
-                  },
-                );
-              },
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                Text(
-                  'Now Playing: $_currentSongTitle',
-                  style: const TextStyle(fontSize: 18),
-                ),
-                Text(
-                  'Source: $_currentSongPath',
-                  style: const TextStyle(fontSize: 16),
-                ),
-                StreamBuilder<Duration?>(
-                  stream: _player.durationStream,
-                  builder: (context, snapshot) {
-                    final duration = snapshot.data ?? Duration.zero;
-                    return Slider(
-                      min: 0.0,
-                      max: duration.inMilliseconds.toDouble(),
-                      value: _player.position.inMilliseconds.toDouble(),
-                      onChanged: (value) {
-                        _player.seek(Duration(milliseconds: value.toInt()));
-                      },
-                    );
-                  },
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    Tooltip(
-                      message: 'Shuffle',
-                      child: IconButton(
-                        onPressed: () {
-                          setState(() {
-                            _isShuffleOn = !_isShuffleOn;
-                          });
-                          _player.setShuffleModeEnabled(_isShuffleOn);
-                        },
-                        icon: Icon(
-                          Icons.shuffle,
-                          color: _isShuffleOn ? Colors.blue : Colors.grey,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () async {
-                        if (_isPlaying) {
-                          await _player.pause();
-                        } else {
-                          await _player.play();
-                        }
-                        setState(() {
-                          _isPlaying = !_isPlaying;
-                        });
-                      },
-                      icon: Icon(_isPlaying ? Icons.pause : Icons.play_arrow),
-                    ),
-                    Tooltip(
-                      message: 'Repeat',
-                      child: IconButton(
-                        onPressed: () {
-                          setState(() {
-                            _isRepeatOn = !(_isRepeatOn);
-                          });
-                        },
-                        icon: Icon(
-                          Icons.repeat,
-                          color: _isRepeatOn ? Colors.blue : Colors.grey,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                Row(
-                  children: [
-                    const Icon(Icons.volume_mute),
-                    Expanded(
-                      child: Slider(
-                        value: _player.volume,
-                        min: 0.0,
-                        max: 1.0,
-                        onChanged: (value) {
-                          setState(() {
-                            _player.setVolume(value);
-                          });
-                        },
-                      ),
-                    ),
-                    const Icon(Icons.volume_up),
-                    Text('${(_player.volume * 100).toInt()}%'),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
+  Future<void> closeDatabase() async {
+    final db = await database;
+    try {
+      await db.close();
+    } catch (e) {
+      logger.e('Error closing database: $e');
+    }
   }
 }
