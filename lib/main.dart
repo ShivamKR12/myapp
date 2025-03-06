@@ -2,6 +2,7 @@ import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:logger/logger.dart';
+import 'package:music_streaming_app/player_screen.dart'; // Import the PlayerScreen
 
 final logger = Logger();
 
@@ -69,6 +70,9 @@ class MyAppState extends State<MyApp> {
           ),
         ),
       ),
+      routes: {
+        '/player': (context) => const PlayerScreen(),
+      },
     );
   }
 }
