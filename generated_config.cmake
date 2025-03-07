@@ -1,0 +1,5 @@
+set(FLUTTER_ROOT "/workspaces/myapp/flutter")
+set(FLUTTER_APPLICATION_PATH "/workspaces/myapp/music_streaming_app")
+set(FLUTTER_TARGET_PLATFORM "linux-x64")
+set(FLUTTER_BUILD_MODE "debug")
+set(FLUTTER_TOOL_ENVIRONMENT "FLUTTER_ROOT=${FLUTTER_ROOT}")
